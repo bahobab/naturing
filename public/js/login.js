@@ -1,12 +1,3 @@
-// checkout these tuts on jwt
-// https://scotch.io/tutorials/authenticate-a-node-es6-api-with-json-web-tokens
-// https://tutorialedge.net/nodejs/nodejs-jwt-authentication-tutorial/
-// https://jasonwatmore.com/post/2018/06/14/nodejs-mongodb-simple-api-for-authentication-registration-and-user-management
-// https://www.codementor.io/olatundegaruba/5-steps-to-authenticating-node-js-with-jwt-7ahb5dmyr
-// https://codingshiksha.com/javascript/node-js-api-authentication-with-jwt/
-
-// https://stackoverflow.com/questions/3342140/cross-domain-cookies
-
 /* eslint-disable */
 
 import axios from 'axios';
@@ -18,7 +9,7 @@ export const login = async (email, password) => {
   try {
     const res = await axios({
       method: 'POST',
-      url: 'http://localhost:3003/api/v1/users/login',
+      url: '/api/v1/users/login', // we don't specify host because same host
       // withCredentials: 'same-origin',
       data: {
         email,
@@ -38,7 +29,20 @@ export const login = async (email, password) => {
     showAlert('error', 'Login failed! Please use proper credentials')
     console.log(err.response.data);
   }
+};
 
+export const logout = async () => {
+  try {
+    const response = await axios({
+      url: '/api/v1/users/logout',
+      method: 'GET',
+    });
+
+    if (response.data.status === 'success') location.reload(true);
+  } catch (err) {
+    showAlert('error', 'Error logging out! Please try again...')
+  }
+}
 
 
   // try {
@@ -55,17 +59,12 @@ export const login = async (email, password) => {
   // } catch (err) {
   //   console.log('Login ERROR', err);
   // }
-};
 
-export const logout = async () => {
-  try {
-    const response = await axios({
-      url: 'http://localhost:3003/api/v1/users/logout',
-      method: 'GET',
-    });
+  // checkout these tuts on jwt
+// https://scotch.io/tutorials/authenticate-a-node-es6-api-with-json-web-tokens
+// https://tutorialedge.net/nodejs/nodejs-jwt-authentication-tutorial/
+// https://jasonwatmore.com/post/2018/06/14/nodejs-mongodb-simple-api-for-authentication-registration-and-user-management
+// https://www.codementor.io/olatundegaruba/5-steps-to-authenticating-node-js-with-jwt-7ahb5dmyr
+// https://codingshiksha.com/javascript/node-js-api-authentication-with-jwt/
 
-    if (response.data.status === 'success') location.reload(true);
-  } catch (err) {
-    showAlert('error', 'Error logging out! Please try again...')
-  }
-}
+// https://stackoverflow.com/questions/3342140/cross-domain-cookies

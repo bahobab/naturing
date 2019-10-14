@@ -8,6 +8,7 @@ const momgoSanitize = require('express-mongo-sanitize');
 const xssClean = require('xss-clean');
 const hpp = require('hpp');
 const cookieParser = require('cookie-parser');
+const compression = require('compression');
 const bodyParser = require('body-parser');
 
 const tourRouter = require('./routes/tourRoutes');
@@ -71,6 +72,9 @@ app.use(
   })
 );
 
+app.use(compression());
+
+// test middliware
 app.use((req, res, next) => {
   req.requestTime = new Date().toISOString();
   next();
