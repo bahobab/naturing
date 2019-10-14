@@ -1,7 +1,69 @@
+const multer = require('multer');
+const sharp = require('sharp');
+
 const Tour = require('../models/tourModel');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
 const factory = require('./handlerFactory');
+
+const multerStorage = multer.memoryStorage();
+
+const multerFilter = (req, file, cb) => {
+  if (file.mimetype.startsWith('image')) {
+    cb(null, true);
+  } else {
+    cb(
+      new AppError('File provided not an image! Please upload image only', 400),
+      false
+    );
+  }
+};
+
+const upload = multer({
+  storage: multerStorage,
+  fileFilter: multerFilter
+});
+
+const uploadTourImages = upload.fields([
+  { name: 'imageCover', maxCount: 1 },
+  { name: 'images', maxCount: 3 }
+]);
+
+// upload.array('images', 5) -> req.files // multiple images
+// upload.single('image') -> req.file    // single image
+
+const resizeTourImages = catchAsync(async (req, res, next) => {
+  console.log(req.files);
+
+  if (!(req.files.imageCover && req.files.images)) return next();
+
+  // 1) imageCover
+  req.body.imageCover = `tour-${req.params.id}-${Date.now()}-cover.jpg`;
+  await sharp(req.files.imageCover[0].buffer)
+    .resize(2000, 1333)
+    .toFormat('jpg')
+    .jpeg({ quality: 90 })
+    .toFile(`public/img/tours/${req.body.imageCover}`);
+
+  // 2) tour images
+  req.body.images = [];
+
+  await Promise.all(
+    req.files.images.map(async (imageFile, index) => {
+      const filename = `tour-${req.params.id}-${Date.now()}-${index + 1}.jpg`;
+
+      await sharp(imageFile.buffer)
+        .resize(2000, 1333)
+        .toFormat('jpg')
+        .jpeg({ quality: 90 })
+        .toFile(`public/img/tours/${filename}`);
+
+      req.body.push(filename);
+    })
+  );
+
+  next();
+});
 
 // const tours = JSON.parse(
 //   fs.readFileSync(`${__dirname}/../dev-data/data/tours-simple.json`)
@@ -180,7 +242,9 @@ module.exports = {
   update1Tour,
   delete1Tour,
   toursWithin,
-  getDistances
+  getDistances,
+  uploadTourImages,
+  resizeTourImages
   // checkTourId,
   // checkBody
 };

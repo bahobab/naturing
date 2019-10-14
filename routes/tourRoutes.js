@@ -15,7 +15,9 @@ const {
   update1Tour,
   delete1Tour,
   toursWithin,
-  getDistances
+  getDistances,
+  uploadTourImages,
+  resizeTourImages
   // checkTourId,
   // checkBody
 } = require('../controllers/tourController');
@@ -49,7 +51,13 @@ router
 router
   .route('/:id')
   .get(get1Tour)
-  .patch(protect, allow('admin'), update1Tour)
+  .patch(
+    protect,
+    allow('admin'),
+    uploadTourImages,
+    resizeTourImages,
+    update1Tour
+  )
   .delete(protect, allow('admin'), delete1Tour);
 
 module.exports = router;

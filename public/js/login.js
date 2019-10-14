@@ -5,21 +5,41 @@
 // https://www.codementor.io/olatundegaruba/5-steps-to-authenticating-node-js-with-jwt-7ahb5dmyr
 // https://codingshiksha.com/javascript/node-js-api-authentication-with-jwt/
 
-const login = async (email, password) => {
+// https://stackoverflow.com/questions/3342140/cross-domain-cookies
+
+/* eslint-disable */
+
+import axios from 'axios';
+
+import {showAlert} from './alert';
+
+export const login = async (email, password) => {
+  console.log('>>login in..', email, password);
   try {
     const res = await axios({
       method: 'POST',
-      url: 'http://127.0.0.1:3003/api/v1/users/login',
-      withCredentials: 'same-origin',
+      url: 'http://localhost:3003/api/v1/users/login',
+      // withCredentials: 'same-origin',
       data: {
         email,
         password
       }
     });
-    console.log(res);
+
+    if (res.data.status === 'success') {
+      showAlert('success', 'Login success')
+      setTimeout(() => {
+        location.assign('/');
+      }, 1500);
+    } else {
+      alert('login failed!!');
+    }
   } catch (err) {
+    showAlert('error', 'Login failed! Please use proper credentials')
     console.log(err.response.data);
   }
+
+
 
   // try {
   //   const res = await fetch('http://127.0.0.1:3003/api/v1/users/login', {
@@ -37,10 +57,15 @@ const login = async (email, password) => {
   // }
 };
 
-document.querySelector('.form').addEventListener('submit', event => {
-  event.preventDefault();
-  const email = document.querySelector('#email').value;
-  const password = document.querySelector('#password').value;
+export const logout = async () => {
+  try {
+    const response = await axios({
+      url: 'http://localhost:3003/api/v1/users/logout',
+      method: 'GET',
+    });
 
-  login(email, password);
-});
+    if (response.data.status === 'success') location.reload(true);
+  } catch (err) {
+    showAlert('error', 'Error logging out! Please try again...')
+  }
+}

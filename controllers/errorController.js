@@ -17,38 +17,67 @@ const handleValidationErrorDB = err => {
   return new AppError(message, 400);
 };
 
-const handleJWTError = () =>
-  new AppError('Invalid token. Please login and try again', 401);
-
-const sendErrorDev = (err, res) => {
-  res.status(err.statusCode).json({
-    status: err.status,
-    message: err.message,
-    stack: err.stack
-  });
-};
-
 const handleJWTExpiredError = () =>
   new AppError('Your login session has expired. Please login again', 401);
 
-const sendErrorProd = (err, res) => {
-  console.log('>>>isOperational', err.isOperational);
-  // Operational trusted error: send message to client
-  if (err.isOperational) {
-    res.status(err.statusCode).json({
+const handleJWTError = () =>
+  new AppError('Invalid token. Please login and try again', 401);
+
+const sendErrorDev = (err, req, res) => {
+  if (req.originalUrl.startsWith('/api')) {
+    // A) API
+    return res.status(err.statusCode).json({
       status: err.status,
-      message: err.message
+      message: err.message,
+      stack: err.stack
     });
-  } else {
+  }
+
+  // B) rendered page
+  console.error('ERROR:', err);
+  return res.status(err.statusCode).render('error', {
+    title: 'DEV Non API: Something went wrong!!',
+    msg: err.message
+  });
+};
+
+const sendErrorProd = (err, req, res) => {
+  if (req.originalUrl.startsWith('/api')) {
+    // A) API
+
+    // Operational trusted error: send message to client
+    if (err.isOperational) {
+      return res.status(err.statusCode).json({
+        status: err.status,
+        message: err.message
+      });
+    }
     // 1) log error
     console.error('ERROR:', err);
 
     // 2) Send generic message (unknown error)
-    res.status(500).json({
+    return res.status(500).json({
       status: 'error',
-      message: 'Something went terribly wrong!'
+      message: 'Prod API Non Op: Something went terribly wrong!'
     });
   }
+
+  // B) RENDER ERROR PAGE
+  if (err.isOperational) {
+    return res.status(err.statusCode).render('error', {
+      title: 'Prod Non API Op: Something went wrong',
+      msg: err.message
+    });
+  }
+
+  // 1) log error
+  console.error('ERROR:', err);
+
+  // 2) Send generic message (unknown error)
+  return res.status(err.statusCode).render('error', {
+    title: 'Prod Non API Non Op: Something went wrong',
+    msg: 'Please, try again later'
+  });
 };
 
 module.exports = (err, req, res, next) => {
@@ -56,9 +85,10 @@ module.exports = (err, req, res, next) => {
   err.status = err.status || 'error';
 
   if (process.env.NODE_ENV === 'development') {
-    sendErrorDev(err, res);
+    sendErrorDev(err, req, res);
   } else if (process.env.NODE_ENV === 'production') {
     let error = { ...err };
+    error.message = err.message;
 
     if (error.name === 'CastError') error = handleCastErrorDB(error);
     if (error.code === 11000) error = handleDuplicateFieldDB(error);
@@ -67,7 +97,7 @@ module.exports = (err, req, res, next) => {
     if (error.name === 'JsonWebTokenError') error = handleJWTError();
     if (error.name === 'TokenExpiredError') error = handleJWTExpiredError();
 
-    sendErrorProd(error, res);
+    sendErrorProd(error, req, res);
   }
 
   next();

@@ -1,4 +1,5 @@
 const Tour = require('../models/tourModel');
+const Booking = require('../models/bookingModel');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
 
@@ -20,7 +21,7 @@ exports.geTour = catchAsync(async (req, res, next) => {
     fields: 'review rating user'
   });
 
-  if (!tour) return next(new AppError('No tour found with provided id', 404));
+  if (!tour) return next(new AppError('No tour found with provided name', 404));
 
   res.status(200).render('tour', {
     title: `${tour.name} Tour`,
@@ -32,3 +33,19 @@ exports.getLoginForm = (req, res) => {
   // render login page
   res.status(200).render('login', { title: 'Log into your account' });
 };
+
+exports.getAccount = (req, res) => {
+  // user is already on the locals values available in views
+  res.status(200).render('account', {
+    title: 'Your Account'
+  });
+};
+
+exports.getMyTours = catchAsync(async (req, res, next) => {
+  const bookings = await Booking.find({ user: req.user.id });
+  const tourIds = bookings.map(booking => booking.tour);
+
+  const tours = await Tour.find({ _id: { $in: tourIds } });
+
+  res.status(200).render('overview', { title: 'My Tours', tours });
+});

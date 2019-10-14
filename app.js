@@ -14,6 +14,7 @@ const tourRouter = require('./routes/tourRoutes');
 const userRouter = require('./routes/userRoutes');
 const reviewRouter = require('./routes/reviewRoute');
 const viewRouter = require('./routes/viewRoutes');
+const bookingRouter = require('./routes/bookingRoutes');
 
 const AppError = require('./utils/appError');
 const globalErrorHandler = require('./controllers/errorController');
@@ -23,17 +24,20 @@ const app = express();
 app.set('view engine', 'pug');
 app.set('views', path.join(__dirname, 'views'));
 
-app.use(
-  cors({
-    origin: 'http://localhost:3003',
-    credentials: true
-  })
-);
+// app.use(
+//   cors({
+// origin: 'http://localhost:3003',
+// credentials: true,
+// allowedHeaders: ['Content-Type', 'Authorization'],
+// methods: ['GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS'],
+// preflightContinue: false
+//   })
+// );
 
 // Global middlewares
 // app.use(express.static(`${__dirname}/public`));
-app.use(express.static(path.join(__dirname, `public`)));
-app.use(helmet());
+app.use(express.static(path.join(__dirname, `public/`)));
+app.use(helmet.noSniff());
 
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
@@ -46,8 +50,8 @@ const limiter = rateLimit({
 });
 app.use('/api', limiter);
 
-app.use(bodyParser.json({ limit: '10kb' }));
-// app.use(express.json({ limit: '10kb' }));
+// app.use(bodyParser.json({ limit: '10kb' }));
+app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 app.use(cookieParser());
 
@@ -69,8 +73,6 @@ app.use(
 
 app.use((req, res, next) => {
   req.requestTime = new Date().toISOString();
-  console.log('>>> cookies', req.cookies);
-  // console.log(req.headers);
   next();
 });
 
@@ -81,9 +83,9 @@ app.use('/', viewRouter);
 app.use('/api/v1/tours', tourRouter);
 app.use('/api/v1/users', userRouter);
 app.use('/api/v1/reviews', reviewRouter);
+app.use('/api/v1/bookings', bookingRouter);
 
 // error handling route
-
 app.all('*', (req, res, next) => {
   // res.status(404).json({
   //   status: 'Failed',
@@ -93,7 +95,6 @@ app.all('*', (req, res, next) => {
   // const err = new Error(`Can't find page requested: ${req.url}`);
   // err.status = 'failed';
   // err.statusCode = 404;
-
   next(new AppError(`Can't find page requested: ${req.url}`, 404));
 });
 
